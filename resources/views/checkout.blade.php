@@ -3,7 +3,11 @@
 @section('title', 'Checkout')
 
 @section('extra-css')
-
+    <style>
+        .mt-32 {
+            margin-top: 32px;
+        }
+    </style>
 <script src="https://js.stripe.com/v3/"></script>
 @endsection
 
@@ -99,6 +103,23 @@
                         Complete Order
                     </button>
                 </form>
+{{--                 <div class="mt-32">or</div>
+                <div class="mt-32">
+                    <h2>Pay with PayPall</h2>
+                    <form method="post" id="paypal-payment-form" action="{{route('checkout.paypal')}}">
+                        @csrf
+                        <section>
+                            <div class="bt-drop-in-wrapper">
+                                <div id="bt-dropin"></div>
+                            </div>
+                        </section>
+
+                        <input id="nonce" name="payment_method_nonce" type="hidden" />
+                        <button class="button-primary" type="submit">
+                            <span>Pay With Paypal</span>
+                        </button>
+                    </form>
+                </div> --}}
             </div>
 
 
@@ -167,8 +188,10 @@
 @endsection
 
 @section('extra-js')
+{{-- for Paypal --}}
+<script src="https://js.braintreegateway.com/web/dropin/1.13.0/js/dropin.min.js"></script>
 <script>
-    
+    //For Stripe
 (function(){
     // Create a Stripe client.
     var stripe = Stripe('pk_test_5c8WxL4Ri4LRJNOqEjU4sh3C');
@@ -257,6 +280,43 @@
       // Submit the form
       form.submit();
     }
+
+    //Paypal integration Code
+        var form = document.querySelector('#paypal-payment-form');
+        //came from checkoutCtrl
+        var client_token = "{{ $paypalToken }}";
+
+        braintree.dropin.create({
+          authorization: client_token,
+          selector: '#bt-dropin',
+          paypal: {
+            flow: 'vault'
+          }
+        }, function (createErr, instance) {
+          if (createErr) {
+            console.log('Create Error', createErr);
+            return;
+          }
+
+          // remove credit card option
+          var elem = document.querySelector('.braintree-option__card');
+          elem.parentNode.removeChild(elem);
+
+          form.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            instance.requestPaymentMethod(function (err, payload) {
+              if (err) {
+                console.log('Request Payment Method Error', err);
+                return;
+              }
+
+              // Add the nonce to the form and submit
+              document.querySelector('#nonce').value = payload.nonce;
+              form.submit();
+            });
+          });
+        });
 
 })();
 </script>

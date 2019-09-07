@@ -20,7 +20,7 @@
         <header class="with-background">
             <div class="top-nav container">
                 <div class="top-nav-left">
-                    <div class="logo">Ecommerce</div>
+                    <div class="logo">Laravel Ecommerce</div>
                     {{ menu('main', 'partials.Menus.main') }}
                 </div>
                 <div class="top-nav-right">

@@ -26,6 +26,8 @@ Route::post('/saveForLater/switchToSaveForLater/{product}', 'SaveForLaterControl
 Route::get('/checkout', 'CheckOutController@index')->name('checkout.index')->middleware('auth');
 Route::post('/checkout', 'CheckOutController@store')->name('checkout.store');
 
+// Route::post('/paypal-checkout', 'CheckOutController@paypalCheckout')->name('checkout.paypal');
+
 //guest checout
 Route::get('/guestcheckout', 'CheckOutController@index')->name('guestcheckout.index');
 

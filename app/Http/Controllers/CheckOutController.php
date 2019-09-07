@@ -34,8 +34,19 @@ class CheckOutController extends Controller
         $discount =     getNumbers()->get('discount');
         $newSubtotal =  getNumbers()->get('newSubtotal');
         $newTax =       getNumbers()->get('newTax'); 
-        $newTotal =     getNumbers()->get('newTotal'); 
-        return view('checkout',compact('discount','newSubtotal','newTax','newTotal'));
+        $newTotal =     getNumbers()->get('newTotal');
+
+        //Paypal Code
+        $gateway = new \Braintree\Gateway([
+            'environment' => config('services.braintree.environment'),
+            'merchantId' => config('services.braintree.merchantId'),
+            'publicKey' => config('services.braintree.publicKey'),
+            'privateKey' => config('services.braintree.privateKey')
+        ]);
+
+        $paypalToken = $gateway->ClientToken()->generate();
+
+        return view('checkout',compact('discount','newSubtotal','newTax','newTotal','paypalToken'));
     }
 
     public function store(CheckoutRequest $request)
@@ -136,4 +147,32 @@ class CheckOutController extends Controller
 
         return false;
     }
+
+    // public function paypalCheckout(Request $request)
+    // {
+    //         $gateway = new \Braintree\Gateway([
+    //             'environment' => config('services.braintree.environment'),
+    //             'merchantId' => config('services.braintree.merchantId'),
+    //             'publicKey' => config('services.braintree.publicKey'),
+    //             'privateKey' => config('services.braintree.privateKey')
+    //         ]);
+
+    //         $nonce = $request->payment_method_nonce;
+
+    //         $result = $gateway->transaction()->sale([
+    //             'amount' => round(getNumbers()->get('newTotal') / 100, 2),
+    //             'paymentMethodNonce' => $nonce,
+    //             'options' => [
+    //                 'submitForSettlement' => true
+    //             ]
+    //         ]);
+
+    //         if ($result->success) {
+    //             $transaction = $result->transaction;
+
+    //             return redirect()->route('confirmation.index')->with('success_message', 'Thank you! Your payment has been successfully accepted!');
+    //         } else {
+    //             return back()->withErrors('An error occurred with the message: '.$result->message);
+    //         }
+    // }
 }

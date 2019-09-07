@@ -219,6 +219,9 @@
                 $('#confirm_delete_modal').modal('hide');
             });
             $('[data-toggle="tooltip"]').tooltip();
+
+            var price = $('input[name="price"').val();
+            $('input[name="price"').val(price / 100);
         });
     </script>
 @stop

@@ -231,29 +231,36 @@ class ProductsController extends VoyagerBaseController
 
         // Validate fields with ajax
         $val = $this->validateBread($request->all(), $dataType->editRows, $dataType->name, $id)->validate();
-        $this->insertUpdateData($request, $slug, $dataType->editRows, $data);
 
-        event(new BreadDataUpdated($dataType, $data));
+        if (!$request->ajax()) {
+            $requestNew = $request;
+            $requestNew['price'] = $request->price * 100;
 
-        CategoryProduct::where('product_id',$id)->delete();
+            $this->insertUpdateData($requestNew, $slug, $dataType->editRows, $data);
+
+            event(new BreadDataUpdated($dataType, $data));
+
+            CategoryProduct::where('product_id', $id)->delete();
+
+            // Re-insert if there's at least one category checked
+            $this->updateProductCategories($request, $id);
+
+            return redirect()
+            ->route("voyager.{$dataType->slug}.index")
+            ->with([
+                'message'    => __('voyager::generic.successfully_updated')." {$dataType->display_name_singular}",
+                'alert-type' => 'success',
+            ]);
+        }
+        // $this->insertUpdateData($request, $slug, $dataType->editRows, $data);
+
+        // event(new BreadDataUpdated($dataType, $data));
+
+        // CategoryProduct::where('product_id',$id)->delete();
 
         //RE-insrt if one category checked
 
-        if($request['category']){
-            foreach ($request['category'] as $category ) {
-                # code...
-                CategoryProduct::create([
-                    'product_id' => $id,
-                    'category_id' => $category,
-                ]);
-            }
-        }
-        return redirect()
-        ->route("voyager.{$dataType->slug}.index")
-        ->with([
-            'message'    => __('voyager::generic.successfully_updated')." {$dataType->display_name_singular}",
-            'alert-type' => 'success',
-        ]);
+
     }
 
     //***************************************
@@ -321,26 +328,41 @@ class ProductsController extends VoyagerBaseController
         $this->authorize('add', app($dataType->model_name));
 
         // Validate fields with ajax
-        $val = $this->validateBread($request->all(), $dataType->addRows)->validate();
-        $data = $this->insertUpdateData($request, $slug, $dataType->addRows, new $dataType->model_name());
+        $val = $this->validateBread($request->all(), $dataType->addRows);
 
-        event(new BreadDataAdded($dataType, $data));
+        if ($val->fails()) {
+            return response()->json(['errors' => $val->messages()]);
+        }
 
-        if($request['category']){
-            foreach ($request['category'] as $category ) {
-                # code...
+        if (!$request->ajax()) {
+            $requestNew = $request;
+            $requestNew['price'] = $request->price * 100;
+
+            $data = $this->insertUpdateData($requestNew, $slug, $dataType->addRows, new $dataType->model_name());
+
+            event(new BreadDataAdded($dataType, $data));
+
+            $this->updateProductCategories($request, $data->id);
+
+            return redirect()
+                ->route("voyager.{$dataType->slug}.index")
+                ->with([
+                        'message'    => __('voyager.generic.successfully_added_new')." {$dataType->display_name_singular}",
+                        'alert-type' => 'success',
+                    ]);
+        }
+    }
+
+    protected function updateProductCategories(Request $request, $id)
+    {
+        if ($request->category) {
+            foreach ($request->category as $category) {
                 CategoryProduct::create([
-                    'product_id' => $data->id,
+                    'product_id' => $id,
                     'category_id' => $category,
                 ]);
             }
         }
-        return redirect()
-        ->route("voyager.{$dataType->slug}.index")
-        ->with([
-                'message'    => __('voyager::generic.successfully_added_new')." {$dataType->display_name_singular}",
-                'alert-type' => 'success',
-            ]);
     }
 
 
